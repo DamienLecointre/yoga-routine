@@ -178,7 +178,7 @@ li i:hover {
   border-radius: 12px;
   font-size: 1.1rem;
 }
-.btn-reboot .fa-times-circle {
+.btn-reboot .fa-circle-xmark {
   font-size: 0.85rem;
   color: rgb(85, 84, 84);
   margin-left: 4px;
