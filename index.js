@@ -1,212 +1,186 @@
-const title = document.querySelector("h1");
-const btnReinintialize = document.querySelector(".fa-undo");
-const cardsContainer = document.querySelector("ul");
-const exerciceContainer = document.querySelector(".exercice-container");
-const btnStart = document.getElementById("start");
-const btnReboot = document.querySelector(".btn-reboot");
+const main = document.querySelector("main");
+const basicArray = [
+  { pic: 0, min: 1 },
+  { pic: 1, min: 1 },
+  { pic: 2, min: 1 },
+  { pic: 3, min: 1 },
+  { pic: 4, min: 1 },
+  { pic: 5, min: 1 },
+  { pic: 6, min: 1 },
+  { pic: 7, min: 1 },
+  { pic: 8, min: 1 },
+  { pic: 9, min: 1 },
+];
+let exerciceArray = [];
 
-// console.log(btnReboot);
-exerciceContainer.style.display = "none";
-btnReboot.style.display = "none";
-let totalSeconds;
-let interval;
-let exercises = [];
-let currentIndex = 0;
-const texteInitial = title.innerHTML;
-const btnStartTexteInitial = btnStart.textContent;
-// console.log(btnStartTexteInitial);
+// Get stored exercices array
+(() => {
+  if (localStorage.exercices) {
+    exerciceArray = JSON.parse(localStorage.exercices);
+  } else {
+    exerciceArray = basicArray;
+  }
+})();
 
-const position = {
-  position0: "./img/0.png",
-  position1: "./img/1.png",
-  position2: "./img/2.png",
-  position3: "./img/3.png",
-  position4: "./img/4.png",
-  position5: "./img/5.png",
-  position6: "./img/6.png",
-  position7: "./img/7.png",
-  position8: "./img/8.png",
-  position9: "./img/9.png",
-};
+class Exercice {
+  constructor() {
+    this.index = 0;
+    this.minutes = exerciceArray[this.index].min;
+    this.seconds = 0;
+  }
 
-//--------------------------------------------------------------------------
-// FONCTIONS
-//--------------------------------------------------------------------------
+  updateCountdown() {
+    this.seconds = this.seconds < 10 ? "0" + this.seconds : this.seconds;
 
-//--------------
-// DISPLAY CARDS
-//--------------
-const displayCards = () => {
-  cardsContainer.innerHTML = "";
-  const storedCards = JSON.parse(localStorage.getItem("cards"));
-  const cardsToDisplay =
-    storedCards ||
-    Object.values(position).map((img) => ({ imgSrc: img, minValue: "1" }));
-
-  cardsToDisplay.forEach(({ imgSrc, minValue }) => {
-    cardsContainer.innerHTML += `
-      <li>
-        <div class="card-header">
-          <input type="number" value="${minValue}">
-          <span>min</span>
-        </div>
-        <img src="${imgSrc}" alt="">
-        <i class="fa-solid fa-circle-arrow-left arrow"></i>
-        <i class="fa-solid fa-circle-xmark deleteBtn"></i>
-      </li>
-    `;
-  });
-  const arrow = document.querySelectorAll(".arrow");
-  const deleteBtn = document.querySelectorAll(".deleteBtn");
-  const inputs = document.querySelectorAll("input");
-  // console.log(inputs);
-
-  inputs.forEach((input) =>
-    input.addEventListener("input", () => {
-      saveCardsToLocalStorage();
-    })
-  );
-
-  arrow.forEach((arrowIcon) =>
-    arrowIcon.addEventListener("click", () => {
-      const li = arrowIcon.parentNode;
-      const prevLi = li.previousElementSibling;
-      if (prevLi) {
-        li.parentNode.insertBefore(li, prevLi);
-        saveCardsToLocalStorage();
-      }
-    })
-  );
-
-  deleteBtn.forEach((deleteIcon) =>
-    deleteIcon.addEventListener("click", () => {
-      // console.log(deleteIcon.parentNode);
-      deleteIcon.parentNode.remove();
-      saveCardsToLocalStorage();
-    })
-  );
-};
-
-// displayCards();
-
-//---------------------------
-// SAVE CARDS TO LOCALSTORAGE
-//---------------------------
-const saveCardsToLocalStorage = () => {
-  const cards = document.querySelectorAll("li");
-  const cardData = [];
-
-  cards.forEach((card) => {
-    const imgSrc = card.querySelector("img").getAttribute("src").trim();
-    const minValue = card.querySelector("input").value;
-    cardData.push({ imgSrc, minValue });
-  });
-
-  localStorage.setItem("cards", JSON.stringify(cardData));
-};
-
-//-----------------
-// EXERCICE DISPLAY
-//-----------------
-
-const countdown = (element) => {
-  // const minutes = Math.floor(timerValue / 60);
-  const timerDisplay = element.querySelector("p");
-  interval = setInterval(() => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    const sec = seconds < 10 ? "0" + seconds : seconds;
-    const min = minutes < 10 ? "0" + minutes : minutes;
-
-    timerDisplay.textContent = `${min}:${sec}`;
-
-    if (totalSeconds > 0) {
-      totalSeconds--;
-    } else {
-      // timerDisplay.textContent = "C'est terminé !";
-      if (interval) clearInterval(interval);
-      currentIndex++;
-      if (currentIndex < exercises.length) {
-        startExercise(currentIndex);
-        ring();
+    setTimeout(() => {
+      if (this.minutes === 0 && this.seconds === "00") {
+        this.index++;
+        this.ring();
+        if (this.index < exerciceArray.length) {
+          this.minutes = exerciceArray[this.index].min;
+          this.seconds = 0;
+          this.updateCountdown();
+        } else {
+          return page.finish();
+        }
+      } else if (this.seconds === "00") {
+        this.minutes--;
+        this.seconds = 59;
+        this.updateCountdown();
       } else {
-        title.textContent = "C'est terminée !";
-        exerciceContainer.style.display = "none";
-        btnStart.textContent = "Recommencer";
-        btnStart.style.display = "inline";
-        btnReboot.style.display = "inline";
+        this.seconds--;
+        this.updateCountdown();
       }
-    }
-  }, 100);
+    }, 1000);
+
+    return (main.innerHTML = `
+      <div class="exercice-container">
+        <p>${this.minutes}:${this.seconds}</p>
+        <img src="./img/${exerciceArray[this.index].pic}.png" />
+        <div>${this.index + 1}/${exerciceArray.length}</div>
+      </div>`);
+  }
+
+  ring() {
+    const audio = new Audio();
+    audio.src = "ring.mp3";
+    audio.play();
+  }
+}
+
+const utils = {
+  pageContent: function (title, content, btn) {
+    document.querySelector("h1").innerHTML = title;
+    main.innerHTML = content;
+    document.querySelector(".btn-container").innerHTML = btn;
+  },
+
+  handleEventMinutes: function () {
+    document.querySelectorAll('input[type="number"]').forEach((input) => {
+      input.addEventListener("input", (e) => {
+        exerciceArray.map((exo) => {
+          if (exo.pic == e.target.id) {
+            exo.min = parseInt(e.target.value);
+            this.store();
+          }
+        });
+      });
+    });
+  },
+
+  handleEventArrow: function () {
+    document.querySelectorAll(".arrow").forEach((arrow) => {
+      arrow.addEventListener("click", (e) => {
+        let position = 0;
+        exerciceArray.map((exo) => {
+          if (exo.pic == e.target.dataset.pic && position !== 0) {
+            [exerciceArray[position], exerciceArray[position - 1]] = [
+              exerciceArray[position - 1],
+              exerciceArray[position],
+            ];
+            page.lobby();
+            this.store();
+          } else {
+            position++;
+          }
+        });
+      });
+    });
+  },
+
+  deleteItem: function () {
+    document.querySelectorAll(".deleteBtn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        let newArr = [];
+        exerciceArray.map((exo) => {
+          if (exo.pic != e.target.dataset.pic) {
+            newArr.push(exo);
+          }
+        });
+        exerciceArray = newArr;
+        page.lobby();
+        this.store();
+      });
+    });
+  },
+
+  reboot: function () {
+    exerciceArray = basicArray;
+    page.lobby();
+    this.store();
+  },
+
+  store: function () {
+    localStorage.exercices = JSON.stringify(exerciceArray);
+  },
 };
-const exerciceDiplay = (timer, imgSrc, length) => {
-  cardsContainer.style.display = "none";
-  btnStart.style.display = "none";
-  exerciceContainer.style.display = "block";
-  title.textContent = "Routine";
-  exerciceContainer.innerHTML = `
-      <p></p>
-      <img src="${imgSrc}">
-      <div>${currentIndex + 1}/${length}</div>
-    `;
-  // totalSeconds = timer * 60;
-  // countdown(exerciceContainer);
+
+const page = {
+  lobby: function () {
+    let mapArray = exerciceArray
+      .map(
+        (exo) =>
+          `
+        <li>
+          <div class="card-header">
+            <input type="number" id=${exo.pic} min="1" max="10" value=${exo.min}>
+            <span>min</span>
+          </div>
+          <img src="./img/${exo.pic}.png" />
+          <i class="fas fa-arrow-alt-circle-left arrow" data-pic=${exo.pic}></i>
+          <i class="fas fa-times-circle deleteBtn" data-pic=${exo.pic}></i>
+        </li>
+      `
+      )
+      .join("");
+
+    utils.pageContent(
+      "Paramétrage <i id='reboot' class='fas fa-undo'></i>",
+      "<ul>" + mapArray + "</ul>",
+      "<button id='start'>Commencer<i class='far fa-play-circle'></i></button>"
+    );
+    utils.handleEventMinutes();
+    utils.handleEventArrow();
+    utils.deleteItem();
+    reboot.addEventListener("click", () => utils.reboot());
+    start.addEventListener("click", () => this.routine());
+  },
+
+  routine: function () {
+    const exercice = new Exercice();
+
+    utils.pageContent("Routine", exercice.updateCountdown(), null);
+  },
+
+  finish: function () {
+    utils.pageContent(
+      "C'est terminé !",
+      "<button id='start'>Recommencer</button>",
+      "<button id='reboot' class='btn-reboot'>Réinintialiser <i class='fas fa-times-circle'></i></button>"
+    );
+    start.addEventListener("click", () => this.routine());
+    reboot.addEventListener("click", () => utils.reboot());
+  },
 };
-// exerciceDiplay();
 
-//----------------
-// START EXERCICES
-//----------------
-const startExercise = (index) => {
-  const { timer, img } = exercises[index];
-  totalSeconds = timer * 60;
-  exerciceDiplay(timer, img, exercises.length);
-  countdown(exerciceContainer);
-};
-
-//-----
-// RING
-//-----
-const ring = () => {
-  const audio = new Audio("./ring.mp3");
-  audio.play();
-};
-
-//--------------------------------------------------------------------------
-// EVENTS
-//--------------------------------------------------------------------------
-
-window.addEventListener("load", () => {
-  btnReinintialize.style.display = "inline";
-  displayCards();
-});
-
-btnReinintialize.addEventListener("click", () => {
-  localStorage.removeItem("cards");
-  displayCards();
-});
-
-btnStart.addEventListener("click", () => {
-  btnReboot.style.display = "none";
-  const cards = [...document.querySelectorAll("li")];
-  exercises = cards.map((card) => ({
-    timer: parseInt(card.querySelector("input").value, 10),
-    img: card.querySelector("img").src,
-  }));
-  currentIndex = 0;
-  startExercise(currentIndex);
-});
-
-btnReboot.addEventListener("click", () => {
-  btnReboot.style.display = "none";
-  btnReinintialize.style.display = "inline";
-  title.innerHTML = texteInitial;
-  btnStart.textContent = btnStartTexteInitial;
-  localStorage.removeItem("cards");
-  cardsContainer.style.display = "flex";
-  displayCards();
-  // console.log(
-  //   "btnReinintialize display:",
-  //   getComputedStyle(btnReinintialize).display
-  // );
-});
+page.lobby();
